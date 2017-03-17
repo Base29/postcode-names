@@ -5,14 +5,12 @@
  */
 class WCPostCodes {
 	private $wcShipZones = null;
-	private $wcSZone = null;
 	private $countryCodes = null;
 	
 	/**
 	 * WCPostCodes constructor.
 	 */
 	public function __construct() {
-		$this->wcSZone      = new WC_Shipping_Zone();
 		$this->wcShipZones  = new WC_Shipping_Zones();
 		$this->countrycodes = array(
 			'AF' => 'Afghanistan',
@@ -258,8 +256,8 @@ class WCPostCodes {
 			'ZM' => 'Zambia',
 			'ZW' => 'Zimbabwe',
 		);
-
-		add_filter( 'woocommerce_default_address_fields ', array( $this, 'wcDropDownField' ) );
+		
+		add_filter( 'woocommerce_checkout_fields ', array( $this, 'wcDropDownField' ) );
 	}
 	
 	public function getPostcodesFromWC() {
@@ -276,14 +274,14 @@ class WCPostCodes {
 		
 		$postalCodes = $this->PostcodeToShipzones();
 		
-		$fields['postcode'] = array(
-			'label'    => __( 'Postal Location', 'woocommerce' ),
+		$fields['billing']['billing_postcode'] = array(
+			'label'    => __( 'Postal Area', 'woocommerce' ),
 			'type'     => 'select',
-			'name'     => 'shipping_postcode',
+			'name'     => 'postcode',
 			'default'  => 'choice 1',
 			'options'  => $postalCodes,
 			'required' => true,
-			'class'    => array( 'form-row-first' ),
+			'class'    => array( 'form-row-last' ),
 			'clear'    => false,
 		);
 		
@@ -305,7 +303,7 @@ class WCPostCodes {
 			$response = json_decode( $response, true );
 			$response = $response['postalcodes'];
 			foreach ( $response as $res ) {
-				$postcodeNames[$postcode][] =  $res['placeName'];
+				$postcodeNames[$postcode.'-'.$res['placeName']] = $res['placeName']  ;
 			}
 			
 		}
