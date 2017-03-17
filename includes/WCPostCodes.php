@@ -259,28 +259,29 @@ class WCPostCodes {
 			'ZW' => 'Zimbabwe',
 		);
 
-//		add_filter( 'woocommerce_checkout_fields', array( $this, 'managePostcodeField' ) );
+		add_filter( 'woocommerce_default_address_fields ', array( $this, 'wcDropDownField' ) );
 	}
 	
 	public function getPostcodesFromWC() {
 		$locations = $this->wcShipZones->get_zones()[1]['formatted_zone_location'];
 		$locations = explode( ", ", $locations );
-
-//		array_shift( $locations );
+		
 		return $locations;
 	}
 	
 	/**
 	 * The method is will change WooCommerce Labels and Fields settings.
 	 */
-	function managePostcodeField( $fields ) {
+	public function wcDropDownField( $fields ) {
 		
-		$fields['shipping']['shipping_city'] = array(
-			'label'    => __( 'Suburb', 'woocommerce' ),
+		$postalCodes = $this->PostcodeToShipzones();
+		
+		$fields['postcode'] = array(
+			'label'    => __( 'Postal Location', 'woocommerce' ),
 			'type'     => 'select',
-			'name'     => 'shipping_state',
+			'name'     => 'shipping_postcode',
 			'default'  => 'choice 1',
-			'options'  => extractSuburbs(),
+			'options'  => $postalCodes,
 			'required' => true,
 			'class'    => array( 'form-row-first' ),
 			'clear'    => false,
@@ -290,51 +291,13 @@ class WCPostCodes {
 	}
 	
 	/**
-	 * The function checks if all products in the cart are virtual products
-	 * code snipped from http://www.remicorson.com/woocommerce-hide-checkout-fields-for-virtual-products/
-	 * @returns bool
-	 */
-	function all_virtual_product() {
-		
-		global $woocommerce;
-		
-		// By default, no virtual product
-		$has_virtual_products = false;
-		
-		// Default virtual products number
-		$virtual_products = 0;
-		
-		// Get all products in cart
-		$products = $woocommerce->cart->get_cart();
-		
-		// Loop through cart products
-		foreach ( $products as $product ) {
-			
-			// Get product ID and '_virtual' post meta
-			$product_id = $product['product_id'];
-			$is_virtual = get_post_meta( $product_id, '￼_virtual', true );
-			
-			// Update $has_virtual_product if product is virtual
-			if ( $is_virtual == 'yes' ) {
-				$virtual_products += 1;
-			}
-		}
-		
-		if ( count( $products ) == $virtual_products ) {
-			$has_virtual_products = true;
-		}
-		
-		return $has_virtual_products;
-	}
-	
-	/**
 	 * Converts postcodes to named shipping zones.
 	 */
 	public function PostcodeToShipzones() {
 		$postcodes     = $this->getPostcodesFromWC();
 		$country       = array_shift( $postcodes );
 		$country       = $this->getCountryCode( $country );
-		$postcodeNames = null ;
+		$postcodeNames = [];
 		foreach ( $postcodes as $postcode ) {
 			$url      = 'http://api.geonames.org/postalCodeLookupJSON?formatted=true&postalcode=' . $postcode .
 			            '&country=' . $country . '&username=faisalblink';
@@ -342,8 +305,9 @@ class WCPostCodes {
 			$response = json_decode( $response, true );
 			$response = $response['postalcodes'];
 			foreach ( $response as $res ) {
-				$postcodeNames[ $postcode ][] = $res['placeName'];
+				$postcodeNames[$postcode][] =  $res['placeName'];
 			}
+			
 		}
 		
 		return $postcodeNames;
@@ -363,10 +327,6 @@ class WCPostCodes {
 	}
 	
 	private function getCountryCode( $country ) {
-		return array_search( $country, $this->countrycodes );
-	}
-	
-	private function getCountry( $country ) {
 		return array_search( $country, $this->countrycodes );
 	}
 }
